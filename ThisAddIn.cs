@@ -126,7 +126,7 @@ namespace xlladdin
         {
             try
             {
-                DownloadAll(AddInURL, AddInDir, "xlladdins.txt");
+                DownloadAll(AddInURL, AddInDir, "xlladdin/blob/master/xlladdins.txt");
                 //Application.RegisterXLL(AddInDir + "xlladdins.xll");
             }
             catch (Exception ex)

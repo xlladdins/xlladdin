@@ -189,6 +189,9 @@
     <AppDesigner Include="Properties\" />
     <None Include="xlladdin_TemporaryKey.pfx" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="xlladdins.txt" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
