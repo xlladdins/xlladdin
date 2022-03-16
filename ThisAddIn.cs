@@ -111,12 +111,12 @@ namespace xlladdin
             using (Stream istream = webClient.OpenRead(url + files))
             {
                 var sr = new StreamReader(istream);
-                while (sr.Peek() >= 0)
+                foreach (string file in sr.ReadToEnd().Split('\n'))
                 {
-                    var file = sr.ReadLine();
+                    var n = file.Length;
                     //Task.Factory.StartNew(() => { 
-                        Download(url + Bits() + @"/", dir, file);
-                        Application.RegisterXLL(AddInDir + file);
+                        //Download(url + Bits() + @"/", dir, file);
+                        //Application.RegisterXLL(AddInDir + file);
                     //});
                 }
             }
@@ -126,8 +126,12 @@ namespace xlladdin
         {
             try
             {
-                DownloadAll(AddInURL, AddInDir, "xlladdin/blob/master/xlladdins.txt");
-                //Application.RegisterXLL(AddInDir + "xlladdins.xll");
+                foreach (string line in File.ReadLines(@"C:\Users\keith\source\repos\xlladdins\xlladdin\xlladdins.txt"))
+                {
+                    var n = line.Length;
+                }
+                DownloadAll(AddInURL, AddInDir, @"xlladdin/blob/master/xlladdins.txt");
+                //Application.RegisterXLL(AddInDir + @"xlladdins.xll");
             }
             catch (Exception ex)
             {
