@@ -18,9 +18,10 @@ namespace xlladdin
 {
     public partial class ThisAddIn
     {
-        private static string AddInURL = "https://github.com/xlladdins/"; // xll_array/tree/master/";
+        private readonly string AddInURL = @"https://github.com/xlladdins/";
+        private readonly string RawURL = @"https://raw.githubusercontent.com/xlladdins/";
         // Excel template directory of user
-        private static string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
+        private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -85,7 +86,7 @@ namespace xlladdin
         }
 
         /// <summary>
-        /// Download file from url
+        /// Download file from url to dir.
         /// </summary>
         private void Download(string url, string dir, string file)
         {
@@ -102,7 +103,7 @@ namespace xlladdin
         }
 
         // Download all known addins
-        private void DownloadAll(string url, string dir, string files)
+        private void Addins(string url, string files)
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             WebClient webClient = new WebClient();
@@ -110,14 +111,16 @@ namespace xlladdin
             // text file of available add-ins
             using (Stream istream = webClient.OpenRead(url + files))
             {
-                var sr = new StreamReader(istream);
-                foreach (string file in sr.ReadToEnd().Split('\n'))
+                using (StreamReader sr = new StreamReader(istream))
                 {
-                    var n = file.Length;
-                    //Task.Factory.StartNew(() => { 
-                        //Download(url + Bits() + @"/", dir, file);
-                        //Application.RegisterXLL(AddInDir + file);
-                    //});
+                    while (sr.Peek() != -1)
+                    {
+                        var file = sr.ReadLine();
+                        Task.Factory.StartNew(() => { 
+                            Download(AddInURL + file + @"/blob/master/" + Bits() + @"/", AddInDir, file + @".xll");
+                            Application.RegisterXLL(AddInDir + file);
+                        });
+                    }
                 }
             }
         }
@@ -126,12 +129,7 @@ namespace xlladdin
         {
             try
             {
-                foreach (string line in File.ReadLines(@"C:\Users\keith\source\repos\xlladdins\xlladdin\xlladdins.txt"))
-                {
-                    var n = line.Length;
-                }
-                DownloadAll(AddInURL, AddInDir, @"xlladdin/blob/master/xlladdins.txt");
-                //Application.RegisterXLL(AddInDir + @"xlladdins.xll");
+                Addins(RawURL, @"xlladdin/master/xlladdins.txt"); 
             }
             catch (Exception ex)
             {
