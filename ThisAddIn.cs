@@ -102,15 +102,11 @@ namespace xlladdin
         /// </summary>
         private void Download(string url, string dir, string file, DateTime date)
         {
-            //var result = client.GetAsync(url + file).Result;
-            //result.EnsureSuccessStatusCode();
-            //var headers = result.Content.Headers;
-
             bool download = true;
             if (File.Exists(dir + file))
             {
                 DateTime lwt = File.GetLastWriteTime(dir + file);
-                if (lwt >= date)
+                if (date <= lwt)
                 {
                     download = false;
                 }
@@ -143,62 +139,62 @@ namespace xlladdin
             }
         }
 
-    // Download all known addins
-    private void Addins(string url, string files)
-    {
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-        WebClient webClient = new WebClient();
-
-        // text file of available add-ins
-        using (Stream istream = webClient.OpenRead(url + files))
+        // Download all known addins
+        private void Addins(string url, string files)
         {
-            using (StreamReader sr = new StreamReader(istream))
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            WebClient webClient = new WebClient();
+
+            // text file of available add-ins
+            using (Stream istream = webClient.OpenRead(url + files))
             {
-                while (sr.Peek() != -1)
+                using (StreamReader sr = new StreamReader(istream))
                 {
-                    string[] filedate = sr.ReadLine().Split(' ');
-                    string file = filedate[0];
-                    DateTime date = DateTime.Parse(filedate[1]);
-                    string xll = file + ".xll";
-                    // add/remove files
-                    //Task.Factory.StartNew(() => { 
-                    Download(AddInURL + file + @"/raw/master/x" + Bits() + @"/", AddInDir, xll, date);
-                    Application.RegisterXLL(AddInDir + xll);
-                    //});
+                    while (sr.Peek() != -1)
+                    {
+                        string[] filedate = sr.ReadLine().Split(' ');
+                        string file = filedate[0];
+                        DateTime date = DateTime.Parse(filedate[1]);
+                        string xll = file + ".xll";
+                        // add/remove files
+                        //Task.Factory.StartNew(() => { 
+                        Download(AddInURL + file + @"/raw/master/x" + Bits() + @"/", AddInDir, xll, date);
+                        Application.RegisterXLL(AddInDir + xll);
+                        //});
+                    }
                 }
             }
         }
-    }
 
-    private void ThisAddIn_Startup(object sender, System.EventArgs e)
-    {
-        try
+        private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            Addins(RawURL, @"xlladdin/master/xlladdins.txt");
+            try
+            {
+                Addins(RawURL, @"xlladdin/master/xlladdins.txt");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
-        catch (Exception ex)
+
+        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            MessageBox.Show(ex.Message);
+            MessageBox.Show("shudown");
         }
+
+        #region VSTO generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InternalStartup()
+        {
+            this.Startup += new System.EventHandler(ThisAddIn_Startup);
+            this.Shutdown += new System.EventHandler(ThisAddIn_Shutdown);
+        }
+
+        #endregion
     }
-
-    private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
-    {
-        MessageBox.Show("shudown");
-    }
-
-    #region VSTO generated code
-
-    /// <summary>
-    /// Required method for Designer support - do not modify
-    /// the contents of this method with the code editor.
-    /// </summary>
-    private void InternalStartup()
-    {
-        this.Startup += new System.EventHandler(ThisAddIn_Startup);
-        this.Shutdown += new System.EventHandler(ThisAddIn_Shutdown);
-    }
-
-    #endregion
-}
 }
