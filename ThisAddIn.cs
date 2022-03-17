@@ -102,23 +102,9 @@ namespace xlladdin
         /// </summary>
         private void Download(string url, string dir, string file, DateTime date)
         {
-            bool download = true;
-            if (File.Exists(dir + file))
-            {
-                DateTime lwt = File.GetLastWriteTime(dir + file);
-                if (date <= lwt)
-                {
-                    download = false;
-                }
-                else
-                {
-                    if (DialogResult.OK != Prompt(file))
-                    {
-                        download = false;
-                    }
-                }
-            }
-            if (download)
+            bool latest = File.Exists(dir + file) && File.GetLastWriteTime(dir + file) > date;
+
+            if (!latest && DialogResult.OK == Prompt(file))
             {
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 WebClient webClient = new WebClient();
@@ -130,6 +116,7 @@ namespace xlladdin
                         {
                             istream.CopyTo(ostream);
                         }
+                        Application.RegisterXLL(dir + file);
                     }
                 }
                 catch (Exception ex)
@@ -142,11 +129,12 @@ namespace xlladdin
         // Download all known addins
         private void Addins(string url, string files)
         {
+            string bits = Bits();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             WebClient webClient = new WebClient();
 
             // text file of available add-ins
-            using (Stream istream = webClient.OpenRead(url + files))
+            using (Stream istream = webClient.OpenRead(url + files + "?ticks=" + DateTime.Now.Ticks.ToString()))
             {
                 using (StreamReader sr = new StreamReader(istream))
                 {
@@ -158,8 +146,7 @@ namespace xlladdin
                         string xll = file + ".xll";
                         // add/remove files
                         //Task.Factory.StartNew(() => { 
-                        Download(AddInURL + file + @"/raw/master/x" + Bits() + @"/", AddInDir, xll, date);
-                        Application.RegisterXLL(AddInDir + xll);
+                        Download(AddInURL + file + @"/raw/master/x" + bits + @"/", AddInDir, xll, date);
                         //});
                     }
                 }
@@ -180,7 +167,7 @@ namespace xlladdin
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            MessageBox.Show("shudown");
+            //MessageBox.Show("shutdown");
         }
 
         #region VSTO generated code
