@@ -10,6 +10,7 @@ using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -22,6 +23,7 @@ namespace xlladdin
         private readonly string RawURL = @"https://raw.githubusercontent.com/xlladdins/";
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
+        static readonly HttpClient client = new HttpClient();
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -85,75 +87,118 @@ namespace xlladdin
             return bits;
         }
 
+        private DialogResult Prompt(string file)
+        {
+            string text = $"Download newer version of {file}?";
+            string caption = "Download";
+
+            return MessageBox.Show(text, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        }
+
+        //??? Deal with clobbering.
+
         /// <summary>
         /// Download file from url to dir.
         /// </summary>
-        private void Download(string url, string dir, string file)
+        private void Download(string url, string dir, string file, DateTime date)
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            WebClient webClient = new WebClient();
+            //var result = client.GetAsync(url + file).Result;
+            //result.EnsureSuccessStatusCode();
+            //var headers = result.Content.Headers;
 
-            using (Stream istream = webClient.OpenRead(url + file))
+            bool download = true;
+            if (File.Exists(dir + file))
             {
-                using (Stream ostream = File.OpenWrite(dir + file))
+                DateTime lwt = File.GetLastWriteTime(dir + file);
+                if (lwt >= date)
                 {
-                    istream.CopyTo(ostream);
+                    download = false;
                 }
-            }
-        }
-
-        // Download all known addins
-        private void Addins(string url, string files)
-        {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            WebClient webClient = new WebClient();
-
-            // text file of available add-ins
-            using (Stream istream = webClient.OpenRead(url + files))
-            {
-                using (StreamReader sr = new StreamReader(istream))
+                else
                 {
-                    while (sr.Peek() != -1)
+                    if (DialogResult.OK != Prompt(file))
                     {
-                        var file = sr.ReadLine();
-                        Task.Factory.StartNew(() => { 
-                            Download(AddInURL + file + @"/blob/master/" + Bits() + @"/", AddInDir, file + @".xll");
-                            Application.RegisterXLL(AddInDir + file);
-                        });
+                        download = false;
                     }
                 }
             }
-        }
-
-        private void ThisAddIn_Startup(object sender, System.EventArgs e)
-        {
-            try
+            if (download)
             {
-                Addins(RawURL, @"xlladdin/master/xlladdins.txt"); 
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                WebClient webClient = new WebClient();
+                try
+                {
+                    using (Stream istream = webClient.OpenRead(url + file))
+                    {
+                        using (Stream ostream = File.OpenWrite(dir + file))
+                        {
+                            istream.CopyTo(ostream);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-            catch (Exception ex)
+        }
+
+    // Download all known addins
+    private void Addins(string url, string files)
+    {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        WebClient webClient = new WebClient();
+
+        // text file of available add-ins
+        using (Stream istream = webClient.OpenRead(url + files))
+        {
+            using (StreamReader sr = new StreamReader(istream))
             {
-                MessageBox.Show(ex.Message);
+                while (sr.Peek() != -1)
+                {
+                    string[] filedate = sr.ReadLine().Split(' ');
+                    string file = filedate[0];
+                    DateTime date = DateTime.Parse(filedate[1]);
+                    string xll = file + ".xll";
+                    // add/remove files
+                    //Task.Factory.StartNew(() => { 
+                    Download(AddInURL + file + @"/raw/master/x" + Bits() + @"/", AddInDir, xll, date);
+                    Application.RegisterXLL(AddInDir + xll);
+                    //});
+                }
             }
         }
-
-        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
-        {
-            MessageBox.Show("shudown");
-        }
-
-        #region VSTO generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
-        private void InternalStartup()
-        {
-            this.Startup += new System.EventHandler(ThisAddIn_Startup);
-            this.Shutdown += new System.EventHandler(ThisAddIn_Shutdown);
-        }
-
-        #endregion
     }
+
+    private void ThisAddIn_Startup(object sender, System.EventArgs e)
+    {
+        try
+        {
+            Addins(RawURL, @"xlladdin/master/xlladdins.txt");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
+    }
+
+    private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
+    {
+        MessageBox.Show("shudown");
+    }
+
+    #region VSTO generated code
+
+    /// <summary>
+    /// Required method for Designer support - do not modify
+    /// the contents of this method with the code editor.
+    /// </summary>
+    private void InternalStartup()
+    {
+        this.Startup += new System.EventHandler(ThisAddIn_Startup);
+        this.Shutdown += new System.EventHandler(ThisAddIn_Shutdown);
+    }
+
+    #endregion
+}
 }
