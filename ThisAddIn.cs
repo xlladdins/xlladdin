@@ -104,7 +104,7 @@ namespace xlladdin
         {
             bool latest = File.Exists(dir + file) && File.GetLastWriteTime(dir + file) > date;
 
-            if (!latest && DialogResult.OK == Prompt(file))
+            if (!latest && DialogResult.Yes == Prompt(file))
             {
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 WebClient webClient = new WebClient();
