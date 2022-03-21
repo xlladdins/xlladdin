@@ -17,13 +17,31 @@ using System.Windows.Forms;
 
 namespace xlladdin
 {
+    /*
+        
+
+        public enum Operation
+        {
+            Add = 1,
+            Remove = 2,
+            New = 3
+        }
+        public void Call(Operation op, string name)
+        {
+            Application.ExecuteExcel4Macro($"ADDIN.MANAGER(op {name}");
+        }
+
+     }
+    */
     public partial class ThisAddIn
     {
+         
+        // GitHub URLs
         private readonly string AddInURL = @"https://github.com/xlladdins/";
         private readonly string RawURL = @"https://raw.githubusercontent.com/xlladdins/";
+        
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
-        static readonly HttpClient client = new HttpClient();
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -60,6 +78,7 @@ namespace xlladdin
 
             return type;
         }
+
         /// <summary>
         /// Determine if Excel is 32 or 64-bit.
         /// </summary>
@@ -87,25 +106,98 @@ namespace xlladdin
             return bits;
         }
 
-        private DialogResult Prompt(string file)
-        {
-            string text = $"Download newer version of {file}?";
-            string caption = "Download";
+        ///
+        /// https://xlladdins.github.io/Excel4Macros/addin.manager.html
+        /// Excel moves AIM value to OPT and adds OPEN<n+1> subkey to load at startup.
+        ///
 
-            return MessageBox.Show(text, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        // Registry entries used by add-in manager.
+        private string OFFICE = "Software\\Microsoft\\Office\\";
+        private string AIM = "\\Excel\\Add-in Manager";
+        private string OPT = "\\Excel\\Options";
+
+        // Excel version
+        private string Version()
+        {
+            return Application.ExecuteExcel4Macro("GET.WORKSPACE(2)");
         }
 
-        //??? Deal with clobbering.
+        // Adds an add-in to the working set using the descriptive name in the Add-Ins dialog box.
+        private dynamic Add(string name)
+		{
+            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(1, \"{name}\")");
+		}
+        // Remove an add-in from the working set using the descriptive name in the Add-Ins dialog box.
+        private dynamic Remove(string name)
+        {
+            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(2, \"{name}\")");
+        }
+        // Adds a new add-in to the working set using the full file name to in the Add-Ins dialog box.
+        private dynamic New(string file)
+        {
+            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(3, \"{file}\")");
+        }
+
+        // Full path if descriptive name matches AIM value.
+        private bool Known(string name)
+        {
+            RegistryKey aim = Registry.CurrentUser.OpenSubKey(OFFICE + Version() + AIM);
+
+            foreach (string key in aim.GetSubKeyNames())
+            {
+                if (aim.GetValue(key).ToString().Contains(name))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // OPT key OPEN<n> contains name if loaded
+        bool Loaded(string name)
+        {
+            RegistryKey opt = Registry.CurrentUser.OpenSubKey(OFFICE + Version() + OPT);
+
+            foreach (string key in opt.GetSubKeyNames())
+            {
+                if (key.StartsWith("OPEN") && opt.GetValue(key).ToString().Contains(name))
+                { 
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        private bool Unregister(string module)
+        {
+            return true == Application.ExecuteExcel4Macro($"UNREGISTER(\"{module}\")");
+        }
+        private void Register(string module)
+        {
+            Application.ExecuteExcel4Macro($"OPEN(\"{module}\")");
+        }
 
         /// <summary>
-        /// Download file from url to dir.
+        /// Download file from url to dir if newer than date.
         /// </summary>
         private void Download(string url, string dir, string file, DateTime date)
         {
-            bool latest = File.Exists(dir + file) && File.GetLastWriteTime(dir + file) > date;
+            string name = Path.GetFileNameWithoutExtension(file);
+            bool exists = File.Exists(dir + file);
+            bool newer = exists && File.GetLastWriteTime(dir + file) < date;
+            bool download = !exists || newer;
 
-            if (!latest && DialogResult.Yes == Prompt(file))
+            if (exists && newer)
             {
+                download = DialogResult.Yes ==
+                    MessageBox.Show(
+                        $"Download newer version of {file}?", "Download",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            }
+            if (download)
+            {
+                //bool registered = Unregister(dir + file);
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 WebClient webClient = new WebClient();
                 try
@@ -116,7 +208,7 @@ namespace xlladdin
                         {
                             istream.CopyTo(ostream);
                         }
-                        Application.RegisterXLL(dir + file);
+                        New(dir + file);
                     }
                 }
                 catch (Exception ex)
