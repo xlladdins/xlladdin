@@ -436,7 +436,7 @@ table td,
 table th,
 table tr {
     padding: 0.4rem 0.8rem;
-    text-align: var(--justify-important);
+    text-align: left; /*var(--justify-important);*/
 }
 
 table thead {
@@ -458,7 +458,7 @@ table thead th:last-child {
 
 table thead th:first-child,
 table tr td:first-child {
-    text-align: var(--justify-normal);
+    text-align: right; /*var(--justify-normal);*/
 }
 
 table tr:nth-child(even) {

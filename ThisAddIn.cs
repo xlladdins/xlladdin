@@ -10,36 +10,20 @@ using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Net;
-using System.Net.Http;
+//using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+//using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace xlladdin
 {
-    /*
-        
-
-        public enum Operation
-        {
-            Add = 1,
-            Remove = 2,
-            New = 3
-        }
-        public void Call(Operation op, string name)
-        {
-            Application.ExecuteExcel4Macro($"ADDIN.MANAGER(op {name}");
-        }
-
-     }
-    */
     public partial class ThisAddIn
     {
-         
+
         // GitHub URLs
         private readonly string AddInURL = @"https://github.com/xlladdins/";
         private readonly string RawURL = @"https://raw.githubusercontent.com/xlladdins/";
-        
+
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
 
@@ -106,76 +90,10 @@ namespace xlladdin
             return bits;
         }
 
-        ///
-        /// https://xlladdins.github.io/Excel4Macros/addin.manager.html
-        /// Excel moves AIM value to OPT and adds OPEN<n+1> subkey to load at startup.
-        ///
-
-        // Registry entries used by add-in manager.
-        private string OFFICE = "Software\\Microsoft\\Office\\";
-        private string AIM = "\\Excel\\Add-in Manager";
-        private string OPT = "\\Excel\\Options";
-
         // Excel version
         private string Version()
         {
             return Application.ExecuteExcel4Macro("GET.WORKSPACE(2)");
-        }
-
-        // Adds an add-in to the working set using the descriptive name in the Add-Ins dialog box.
-        private dynamic Add(string name)
-		{
-            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(1, \"{name}\")");
-		}
-        // Remove an add-in from the working set using the descriptive name in the Add-Ins dialog box.
-        private dynamic Remove(string name)
-        {
-            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(2, \"{name}\")");
-        }
-        // Adds a new add-in to the working set using the full file name to in the Add-Ins dialog box.
-        private dynamic New(string file)
-        {
-            return Application.ExecuteExcel4Macro($"ADDIN.MANAGER(3, \"{file}\")");
-        }
-
-        // Full path if descriptive name matches AIM value.
-        private bool Known(string name)
-        {
-            RegistryKey aim = Registry.CurrentUser.OpenSubKey(OFFICE + Version() + AIM);
-
-            foreach (string key in aim.GetSubKeyNames())
-            {
-                if (aim.GetValue(key).ToString().Contains(name))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // OPT key OPEN<n> contains name if loaded
-        bool Loaded(string name)
-        {
-            RegistryKey opt = Registry.CurrentUser.OpenSubKey(OFFICE + Version() + OPT);
-
-            foreach (string key in opt.GetSubKeyNames())
-            {
-                if (key.StartsWith("OPEN") && opt.GetValue(key).ToString().Contains(name))
-                { 
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        private bool Unregister(string module)
-        {
-            return true == Application.ExecuteExcel4Macro($"UNREGISTER(\"{module}\")");
-        }
-        private void Register(string module)
-        {
-            Application.ExecuteExcel4Macro($"OPEN(\"{module}\")");
         }
 
         /// <summary>
@@ -187,17 +105,28 @@ namespace xlladdin
             bool exists = File.Exists(dir + file);
             bool newer = exists && File.GetLastWriteTime(dir + file) < date;
             bool download = !exists || newer;
+            bool installed = exists && Application.AddIns2[name].Installed;
 
             if (exists && newer)
             {
-                download = DialogResult.Yes ==
-                    MessageBox.Show(
-                        $"Download newer version of {file}?", "Download",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                download = DialogResult.Yes == MessageBox.Show(
+                    $"Download newer version of {name}?", "Download",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             }
             if (download)
             {
-                //bool registered = Unregister(dir + file);
+                if (installed)
+                {
+                    Application.AddIns2[name].Installed = false;
+                    //File.Delete(dir + file);
+                }
+                else if (!exists)
+                {
+                    installed = DialogResult.Yes == MessageBox.Show(
+                        $"Load {name} on Excel startup?", "Load",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                }
+
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 WebClient webClient = new WebClient();
                 try
@@ -208,7 +137,11 @@ namespace xlladdin
                         {
                             istream.CopyTo(ostream);
                         }
-                        New(dir + file);
+                        Application.AddIns.Add(dir + file);
+                        if (installed)
+                        {
+                            Application.AddIns2[name].Installed = true;
+                        }
                     }
                 }
                 catch (Exception ex)
