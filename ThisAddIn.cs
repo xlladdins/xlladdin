@@ -118,7 +118,6 @@ namespace xlladdin
                 if (installed)
                 {
                     Application.AddIns2[name].Installed = false;
-                    //File.Delete(dir + file);
                 }
                 else if (!exists)
                 {
@@ -137,6 +136,7 @@ namespace xlladdin
                         {
                             istream.CopyTo(ostream);
                         }
+
                         Application.AddIns.Add(dir + file);
                         if (installed)
                         {
