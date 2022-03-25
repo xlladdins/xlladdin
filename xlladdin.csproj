@@ -215,9 +215,10 @@
     <None Include="xlladdin_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="privacypolicy.txt" />
+    <None Include="privacypolicy.md" />
     <Content Include="website\index.html" />
     <Content Include="website\mvp.css" />
+    <Content Include="website\privacypolicy.html" />
     <Content Include="xlladdins.txt" />
   </ItemGroup>
   <PropertyGroup>
