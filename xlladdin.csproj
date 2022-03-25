@@ -30,19 +30,19 @@
     <DefineConstants>VSTO40</DefineConstants>
     <IsWebBootstrapper>True</IsWebBootstrapper>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <PublishUrl>publish\</PublishUrl>
-    <InstallUrl>https://xlladdins.com/xlladdins/</InstallUrl>
+    <PublishUrl>ftp://xlladdins.com/xlladdins.com/</PublishUrl>
+    <InstallUrl>https://xlladdins.com/</InstallUrl>
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.2</ApplicationVersion>
+    <ApplicationVersion>1.0.0.9</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
     <UpdateIntervalUnits>days</UpdateIntervalUnits>
     <ProductName>xlladdin</ProductName>
-    <PublisherName />
-    <SupportUrl />
+    <PublisherName>KALX, LLC</PublisherName>
+    <SupportUrl>https://xlladdins.com</SupportUrl>
     <FriendlyName>xlladdin</FriendlyName>
-    <OfficeApplicationDescription />
+    <OfficeApplicationDescription>Manage Excel add-ins</OfficeApplicationDescription>
     <LoadBehavior>3</LoadBehavior>
   </PropertyGroup>
   <ItemGroup>
@@ -133,6 +133,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="WebDav.Client, Version=2.7.0.0, Culture=neutral, PublicKeyToken=daed9acc7deb9472, processorArchitecture=MSIL">
+      <HintPath>packages\WebDav.Client.2.7.0\lib\net45\WebDav.Client.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -194,6 +197,7 @@
     </Compile>
     <None Include="KALX.pfx" />
     <None Include="NOTES.md" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -205,6 +209,7 @@
     <Compile Include="ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
+    <None Include="README.md" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>

@@ -14,6 +14,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 //using System.Threading.Tasks;
 using System.Windows.Forms;
+using WebDav;
 
 namespace xlladdin
 {
@@ -26,6 +27,13 @@ namespace xlladdin
 
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
+
+        private static readonly WebDavClientParams clientParams = new WebDavClientParams
+        {
+            BaseAddress = new Uri("https://xlladdins.com/addins/"),
+            Credentials = new NetworkCredential("kal", "wo3deameh")
+        };
+        private static IWebDavClient client = new WebDavClient(clientParams);
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -155,6 +163,8 @@ namespace xlladdin
         // Download all known addins
         private void Addins(string url, string files)
         {
+            //var result = client.Propfind("https://xlladdins.com/addins");
+
             string bits = Bits();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             WebClient webClient = new WebClient();
