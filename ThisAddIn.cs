@@ -130,6 +130,7 @@ namespace xlladdin
                 WebClient webClient = new WebClient();
                 try
                 {
+                    // !!!set timeout
                     using (Stream istream = webClient.OpenRead(url + file))
                     {
                         using (Stream ostream = File.OpenWrite(dir + file))
@@ -169,7 +170,6 @@ namespace xlladdin
                         string file = filedate[0];
                         DateTime date = DateTime.Parse(filedate[1]);
                         string xll = file + ".xll";
-                        // add/remove files
                         //Task.Factory.StartNew(() => { 
                         Download(AddInURL + file + @"/raw/master/x" + bits + @"/", AddInDir, xll, date);
                         //});
