@@ -44,6 +44,8 @@
     <FriendlyName>xlladdin</FriendlyName>
     <OfficeApplicationDescription>Manage Excel add-ins</OfficeApplicationDescription>
     <LoadBehavior>3</LoadBehavior>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
@@ -133,8 +135,8 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="WebDav.Client, Version=2.7.0.0, Culture=neutral, PublicKeyToken=daed9acc7deb9472, processorArchitecture=MSIL">
-      <HintPath>packages\WebDav.Client.2.7.0\lib\net45\WebDav.Client.dll</HintPath>
+    <Reference Include="WinSCPnet, Version=1.11.0.12643, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf, processorArchitecture=MSIL">
+      <HintPath>packages\WinSCP.5.21.1\lib\net40\WinSCPnet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -260,4 +262,11 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
+  <Import Project="packages\WinSCP.5.21.1\build\WinSCP.targets" Condition="Exists('packages\WinSCP.5.21.1\build\WinSCP.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\WinSCP.5.21.1\build\WinSCP.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\WinSCP.5.21.1\build\WinSCP.targets'))" />
+  </Target>
 </Project>

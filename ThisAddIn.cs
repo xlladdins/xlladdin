@@ -10,17 +10,18 @@ using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Net;
-//using System.Net.Http;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 //using System.Threading.Tasks;
 using System.Windows.Forms;
-using WebDav;
+using WinSCP;
 
 namespace xlladdin
 {
     public partial class ThisAddIn
     {
+        static readonly HttpClient client = new HttpClient();
 
         // GitHub URLs
         private readonly string AddInURL = @"https://github.com/xlladdins/";
@@ -99,7 +100,7 @@ namespace xlladdin
             return Application.ExecuteExcel4Macro("GET.WORKSPACE(2)");
         }
 
-        /// <summary>
+       /// <summary>
         /// Download file from url to dir if newer than date.
         /// </summary>
         private void Download(string url, string dir, string file, DateTime date)
@@ -161,59 +162,62 @@ namespace xlladdin
         // https://xlladdins.com/addins
         private void Addins(string url, string files)
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            WebDavClientParams clientParams = new WebDavClientParams
-            {
-                BaseAddress = new Uri("https://xlladdins.com/addins"),
-                Credentials = new NetworkCredential("kal", "wo3deameh")
-            };
-            IWebDavClient client = new WebDavClient(clientParams);
-
-            var propfindParams = new PropfindParameters
-            {
-                RequestType = PropfindRequestType.NamedProperties
-            };
-            Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
-            task.Wait();    
-            /*
-            var result = Task.Factory.StartNew(async () => {
-                Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
-                var tmp = await task;
-            });
-            result.Wait();
-            var res = result.IsCompleted;
-            */
-            /*if (result.IsSuccessful)
-            {
-                foreach (var res in result.Resources)
-                {
-                    Trace.WriteLine("Name: " + res.DisplayName);
-                    Trace.WriteLine("Is directory: " + res.IsCollection);
-                    // etc.
-                }
-            }
-            */
             string bits = Bits();
-            WebClient webClient = new WebClient();
-
-            // text file of available add-ins
-            using (Stream istream = webClient.OpenRead(url + files + "?ticks=" + DateTime.Now.Ticks.ToString()))
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            SessionOptions sessionOptions = new SessionOptions
             {
-                using (StreamReader sr = new StreamReader(istream))
+                Protocol = Protocol.Webdav,
+                HostName = "xlladdins.com",
+                RootPath = "/addins",
+                UserName = "kal",
+                Password = "wo3deameh"
+            };
+            using (Session session = new Session())
+            {
+                session.Open(sessionOptions);
+                // all files in bits directory
+                RemoteDirectoryInfo targetServerDir = session.ListDirectory(bits);
+                var x = targetServerDir.Files;
+            }
+        }
+        /*
+        var result = Task.Factory.StartNew(async () => {
+            Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
+            var tmp = await task;
+        });
+        result.Wait();
+        var res = result.IsCompleted;
+        */
+        /*if (result.IsSuccessful)
+        {
+            foreach (var res in result.Resources)
+            {
+                Trace.WriteLine("Name: " + res.DisplayName);
+                Trace.WriteLine("Is directory: " + res.IsCollection);
+                // etc.
+            }
+        }
+        WebClient webClient = new WebClient();
+
+        // text file of available add-ins
+        using (Stream istream = webClient.OpenRead(url + files + "?ticks=" + DateTime.Now.Ticks.ToString()))
+        {
+            using (StreamReader sr = new StreamReader(istream))
+            {
+                while (sr.Peek() != -1)
                 {
-                    while (sr.Peek() != -1)
-                    {
-                        string[] filedate = sr.ReadLine().Split(' ');
-                        string file = filedate[0];
-                        DateTime date = DateTime.Parse(filedate[1]);
-                        string xll = file + ".xll";
-                        //Task.Factory.StartNew(() => { 
-                        Download(AddInURL + file + @"/raw/master/x" + bits + @"/", AddInDir, xll, date);
-                        //});
-                    }
+                    string[] filedate = sr.ReadLine().Split(' ');
+                    string file = filedate[0];
+                    DateTime date = DateTime.Parse(filedate[1]);
+                    string xll = file + ".xll";
+                    //Task.Factory.StartNew(() => { 
+                    Download(AddInURL + file + @"/raw/master/x" + bits + @"/", AddInDir, xll, date);
+                    //});
                 }
             }
         }
+    }
+                   */
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
