@@ -12,6 +12,7 @@ using System.IO;
 using System.Net;
 //using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 //using System.Threading.Tasks;
 using System.Windows.Forms;
 using WebDav;
@@ -28,12 +29,6 @@ namespace xlladdin
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
 
-        private static readonly WebDavClientParams clientParams = new WebDavClientParams
-        {
-            BaseAddress = new Uri("https://xlladdins.com/addins/"),
-            Credentials = new NetworkCredential("kal", "wo3deameh")
-        };
-        private static IWebDavClient client = new WebDavClient(clientParams);
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -161,12 +156,44 @@ namespace xlladdin
         }
 
         // Download all known addins
+        // Map WebDAV folder permission
+        // HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WebClient\Parameters\ BasicAuthLevel = 2
+        // https://xlladdins.com/addins
         private void Addins(string url, string files)
         {
-            //var result = client.Propfind("https://xlladdins.com/addins");
-
-            string bits = Bits();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            WebDavClientParams clientParams = new WebDavClientParams
+            {
+                BaseAddress = new Uri("https://xlladdins.com/addins"),
+                Credentials = new NetworkCredential("kal", "wo3deameh")
+            };
+            IWebDavClient client = new WebDavClient(clientParams);
+
+            var propfindParams = new PropfindParameters
+            {
+                RequestType = PropfindRequestType.NamedProperties
+            };
+            Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
+            task.Wait();    
+            /*
+            var result = Task.Factory.StartNew(async () => {
+                Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
+                var tmp = await task;
+            });
+            result.Wait();
+            var res = result.IsCompleted;
+            */
+            /*if (result.IsSuccessful)
+            {
+                foreach (var res in result.Resources)
+                {
+                    Trace.WriteLine("Name: " + res.DisplayName);
+                    Trace.WriteLine("Is directory: " + res.IsCollection);
+                    // etc.
+                }
+            }
+            */
+            string bits = Bits();
             WebClient webClient = new WebClient();
 
             // text file of available add-ins
