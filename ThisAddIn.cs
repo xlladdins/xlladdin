@@ -176,8 +176,15 @@ namespace xlladdin
             {
                 session.Open(sessionOptions);
                 // all files in bits directory
-                RemoteDirectoryInfo targetServerDir = session.ListDirectory(bits);
-                var x = targetServerDir.Files;
+                RemoteDirectoryInfo directory = session.ListDirectory(bits);
+                foreach (RemoteFileInfo fileInfo in directory.Files)
+                {
+                    // Update(fileInfo);
+                    Console.WriteLine(
+                        "{0} with size {1}, permissions {2} and last modification at {3}",
+                        fileInfo.Name, fileInfo.Length, fileInfo.FilePermissions,
+                        fileInfo.LastWriteTime);
+                }
             }
         }
         /*
