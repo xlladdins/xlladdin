@@ -21,15 +21,8 @@ namespace xlladdin
 {
     public partial class ThisAddIn
     {
-        static readonly HttpClient client = new HttpClient();
-
-        // GitHub URLs
-        private readonly string AddInURL = @"https://github.com/xlladdins/";
-        private readonly string RawURL = @"https://raw.githubusercontent.com/xlladdins/";
-
         // Excel template directory of user
         private readonly string AddInDir = Environment.GetEnvironmentVariable("AppData") + @"\Microsoft\AddIns\";
-
 
         [DllImport("kernel32")]
         public extern static IntPtr LoadLibrary(string librayName);
@@ -100,67 +93,45 @@ namespace xlladdin
             return Application.ExecuteExcel4Macro("GET.WORKSPACE(2)");
         }
 
-       /// <summary>
-        /// Download file from url to dir if newer than date.
+        /// <summary>
+        /// Download if newer remote version or local version does not exist
         /// </summary>
-        private void Download(string url, string dir, string file, DateTime date)
+        /// <param name="fileInfo"></param>
+        private void Update(Session session, RemoteFileInfo fileInfo)
         {
-            string name = Path.GetFileNameWithoutExtension(file);
-            bool exists = File.Exists(dir + file);
-            bool newer = exists && File.GetLastWriteTime(dir + file) < date;
-            bool download = !exists || newer;
-            bool installed = exists && Application.AddIns2[name].Installed;
-
-            if (exists && newer)
+            string fileName = AddInDir + fileInfo.Name;
+            bool exists = File.Exists(fileName);
+            bool newer = exists && File.GetLastWriteTime(fileName) < fileInfo.LastWriteTime;
+ 
+            if (newer)
             {
-                download = DialogResult.Yes == MessageBox.Show(
-                    $"Download newer version of {name}?", "Download",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            }
-            if (download)
-            {
+                var addIn = Application.AddIns2[Path.GetFileNameWithoutExtension(fileInfo.Name)];
+                bool installed = addIn.Installed;
+                // temporarily unload
                 if (installed)
                 {
-                    Application.AddIns2[name].Installed = false;
+                    addIn.Installed = false;
                 }
-                else if (!exists)
+                session.GetFileToDirectory(fileInfo.FullName, AddInDir, true, null);
+                // reload
+                if (installed)
                 {
-                    installed = DialogResult.Yes == MessageBox.Show(
-                        $"Load {name} on Excel startup?", "Load",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    addIn.Installed = true;
                 }
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                WebClient webClient = new WebClient();
-                try
-                {
-                    // !!!set timeout
-                    using (Stream istream = webClient.OpenRead(url + file))
-                    {
-                        using (Stream ostream = File.OpenWrite(dir + file))
-                        {
-                            istream.CopyTo(ostream);
-                        }
-
-                        Application.AddIns.Add(dir + file);
-                        if (installed)
-                        {
-                            Application.AddIns2[name].Installed = true;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            else if (!exists)
+            {
+                session.GetFileToDirectory(fileInfo.FullName, AddInDir, true, null);
+                Application.AddIns.Add(AddInDir + fileInfo.Name);
+                var addIn = Application.AddIns2[Path.GetFileNameWithoutExtension(fileInfo.Name)];
+                addIn.Installed = true;
             }
         }
 
-        // Download all known addins
-        // Map WebDAV folder permission
-        // HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WebClient\Parameters\ BasicAuthLevel = 2
-        // https://xlladdins.com/addins
-        private void Addins(string url, string files)
+        /// <summary>
+        /// Addin files for appropriate Excel bitness.
+        /// </summary>
+        private void SyncAddins()
         {
             string bits = Bits();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -179,58 +150,20 @@ namespace xlladdin
                 RemoteDirectoryInfo directory = session.ListDirectory(bits);
                 foreach (RemoteFileInfo fileInfo in directory.Files)
                 {
-                    // Update(fileInfo);
-                    Console.WriteLine(
-                        "{0} with size {1}, permissions {2} and last modification at {3}",
-                        fileInfo.Name, fileInfo.Length, fileInfo.FilePermissions,
-                        fileInfo.LastWriteTime);
+                    // Can't remove temporary ~$ WebDAV files.
+                    if (!fileInfo.IsDirectory && !fileInfo.Name.StartsWith(@"~$"))
+                    {
+                        Update(session, fileInfo);
+                    }
                 }
-            }
-        }
-        /*
-        var result = Task.Factory.StartNew(async () => {
-            Task<PropfindResponse> task = client.Propfind("https://xlladdins.com/addins", propfindParams);
-            var tmp = await task;
-        });
-        result.Wait();
-        var res = result.IsCompleted;
-        */
-        /*if (result.IsSuccessful)
-        {
-            foreach (var res in result.Resources)
-            {
-                Trace.WriteLine("Name: " + res.DisplayName);
-                Trace.WriteLine("Is directory: " + res.IsCollection);
-                // etc.
-            }
-        }
-        WebClient webClient = new WebClient();
 
-        // text file of available add-ins
-        using (Stream istream = webClient.OpenRead(url + files + "?ticks=" + DateTime.Now.Ticks.ToString()))
-        {
-            using (StreamReader sr = new StreamReader(istream))
-            {
-                while (sr.Peek() != -1)
-                {
-                    string[] filedate = sr.ReadLine().Split(' ');
-                    string file = filedate[0];
-                    DateTime date = DateTime.Parse(filedate[1]);
-                    string xll = file + ".xll";
-                    //Task.Factory.StartNew(() => { 
-                    Download(AddInURL + file + @"/raw/master/x" + bits + @"/", AddInDir, xll, date);
-                    //});
-                }
             }
         }
-    }
-                   */
-
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
             {
-                Addins(RawURL, @"xlladdin/master/xlladdins.txt");
+                SyncAddins();
             }
             catch (Exception ex)
             {

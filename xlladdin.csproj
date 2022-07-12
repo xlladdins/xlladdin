@@ -29,8 +29,10 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <DefineConstants>VSTO40</DefineConstants>
     <IsWebBootstrapper>True</IsWebBootstrapper>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <PublishUrl>Z:\</PublishUrl>
+    <PublishUrl>x:\</PublishUrl>
     <InstallUrl>https://xlladdins.com/addins/</InstallUrl>
     <TargetCulture>en</TargetCulture>
     <ApplicationVersion>1.0.0.11</ApplicationVersion>
@@ -44,8 +46,6 @@
     <FriendlyName>xlladdin</FriendlyName>
     <OfficeApplicationDescription>Manage Excel add-ins</OfficeApplicationDescription>
     <LoadBehavior>3</LoadBehavior>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
