@@ -121,7 +121,7 @@ namespace xlladdin
             }
             else if (!exists)
             {
-                session.GetFileToDirectory(fileInfo.FullName, AddInDir, true, null);
+                session.GetFileToDirectory(fileInfo.FullName, AddInDir);
                 Application.AddIns.Add(AddInDir + fileInfo.Name);
                 var addIn = Application.AddIns2[Path.GetFileNameWithoutExtension(fileInfo.Name)];
                 addIn.Installed = true;
