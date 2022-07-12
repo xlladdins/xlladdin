@@ -112,7 +112,7 @@ namespace xlladdin
                 {
                     addIn.Installed = false;
                 }
-                session.GetFileToDirectory(fileInfo.FullName, AddInDir, true, null);
+                session.GetFileToDirectory(fileInfo.FullName, AddInDir);
                 // reload
                 if (installed)
                 {
