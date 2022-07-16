@@ -32,10 +32,10 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <PublishUrl>x:\</PublishUrl>
-    <InstallUrl>https://xlladdins.com/addins/</InstallUrl>
+    <PublishUrl>ftp://xlladdins.com/xlladdins.com/</PublishUrl>
+    <InstallUrl>https://xlladdins.com/</InstallUrl>
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.11</ApplicationVersion>
+    <ApplicationVersion>1.0.0.23</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -239,7 +239,7 @@
     <ManifestKeyFile>KALX.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>29C0FABDCB9D5611730DDB1BD0C064C3591A78DD</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>F901E0308DE67D2E5FEBD28E568BA49D805B6FC6</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestTimestampUrl>http://timestamp.comodoca.com</ManifestTimestampUrl>
